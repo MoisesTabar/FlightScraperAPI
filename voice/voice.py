@@ -27,6 +27,7 @@ from voice.constants import (
 )
 
 from dataclasses import dataclass
+from voice.logging import logger
 
 
 @dataclass(slots=True)
@@ -37,21 +38,28 @@ class VoiceRecognitionService:
         file_extension = Path(filename).suffix.lower().lstrip(".")
         
         if file_extension not in SUPPORTED_AUDIO_FORMATS:
-            raise InvalidAudioFormatError(
-                f"Unsupported audio format: {file_extension}. "
-                f"Supported formats: {', '.join(SUPPORTED_AUDIO_FORMATS)}"
-            )
+            error_message = f"""
+            Unsupported audio format: {file_extension}. 
+            Supported formats: {', '.join(SUPPORTED_AUDIO_FORMATS)}
+            """
+            
+            logger.error(error_message)
+            raise InvalidAudioFormatError(error_message)
         
         file.seek(0, 2)
         file_size = file.tell()
         file.seek(0)
+
+        logger.info("Audio file validated successfully")
         
         if file_size > MAX_FILE_SIZE_BYTES:
             total_size = file_size / 1024 / 1024
-            raise AudioFileTooLargeError(
-                f"Audio file size ({total_size:.2f}MB) exceeds "
-                f"maximum allowed size ({MAX_FILE_SIZE_MB}MB)"
-            )
+            error_message = f"""
+            Audio file size ({total_size:.2f}MB) exceeds maximum allowed size ({MAX_FILE_SIZE_MB}MB)
+            """
+            
+            logger.error(error_message)
+            raise AudioFileTooLargeError(error_message)
 
     def transcribe_audio(self, file: BinaryIO, filename: str) -> str:
         try:
@@ -60,6 +68,8 @@ class VoiceRecognitionService:
                 file=(filename, file),
                 response_format="text"
             )
+            
+            logger.info("Audio transcription completed successfully")
             return response.strip() if isinstance(response, str) else response
         except (RateLimitError, APIConnectionError, APIError, OpenAIError) as e:
             # Convert OpenAI exceptions to domain exception
@@ -67,7 +77,9 @@ class VoiceRecognitionService:
                 RateLimitError: "OpenAI API rate limit exceeded. Please try again later.",
                 APIConnectionError: "Failed to connect to OpenAI API. Please check your internet connection.",
             }
+
             message = error_messages.get(type(e), f"Transcription failed: {str(e)}")
+            logger.error(message)
             raise TranscriptionError(message) from e
 
     def extract_structured_data(self, transcription: str) -> dict[str, Any]:
@@ -93,6 +105,8 @@ class VoiceRecognitionService:
                 response_format={"type": "json_object"}
             )
             
+            logger.info("Structured data extraction completed successfully")
+            
             result = json.loads(response.choices[0].message.content)
             
             if "transcription" not in result:
@@ -109,7 +123,9 @@ class VoiceRecognitionService:
                 RateLimitError: "OpenAI API rate limit exceeded. Please try again later.",
                 APIConnectionError: "Failed to connect to OpenAI API. Please check your internet connection.",
             }
+
             message = error_messages.get(type(e), f"Structured extraction failed: {str(e)}")
+            logger.error(message)
             raise StructuredExtractionError(message) from e
 
     async def process_audio(
