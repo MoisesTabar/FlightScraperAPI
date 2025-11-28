@@ -1,31 +1,25 @@
 import os
 import tempfile
-from fastapi import FastAPI, UploadFile
+from fastapi import APIRouter, UploadFile
 from dotenv import load_dotenv
 
 from voice.voice import VoiceRecognitionService
 from voice.models import VoiceSearchResponse
 from voice.constants import API_DESCRIPTION, API_RESPONSES
-from voice.middleware import register_exception_handlers
+from scraper.scraper import search_flights
 
 from openai import OpenAI
 
 load_dotenv()
 
-app = FastAPI(
-    title="Voice Flight Search API",
-    description="API for voice-based flight search using OpenAI Whisper and GPT-4",
-    version="1.0.0"
-)
-
-register_exception_handlers(app)
+router = APIRouter()
 
 voice_service = VoiceRecognitionService(
     client=OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 )
 
-@app.post(
-    "/voice/search",
+@router.post(
+    "/search/voice",
     response_model=VoiceSearchResponse,
     responses=API_RESPONSES,
     description=API_DESCRIPTION
