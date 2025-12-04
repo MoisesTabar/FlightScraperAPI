@@ -7,6 +7,7 @@ from .utils import (
     process_multi_city_selectors,
     process_date_selectors,
     process_flight_selectors,
+    show_adult_per_infants_on_lap_error,
 )
 from .constants import (
     FROM_SELECTOR,
@@ -126,6 +127,8 @@ async def fill_passenger_form(page: Page, params: SearchParams) -> None:
             await container.locator(PASSENGER_INCREMENT_BUTTON).click(click_count=click_amount)
         elif click_amount < 0:
             await container.locator(PASSENGER_DECREMENT_BUTTON).click(click_count=abs(click_amount))
+
+    await show_adult_per_infants_on_lap_error(page)
 
     await dialog.locator(PASSENGER_DONE_BUTTON).click()
         

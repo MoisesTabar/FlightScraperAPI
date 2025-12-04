@@ -10,7 +10,12 @@ from .constants import (
 import asyncio
 from playwright.async_api import Page, async_playwright
 
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_not_exception_type
+)
 
 from .utils import process_flight
 from .forms import (
@@ -79,7 +84,8 @@ async def extract_flights(page: Page) -> list[dict]:
 
 @retry(
     stop=stop_after_attempt(STOP_AFTER_ATTEMPTS), 
-    wait=wait_exponential(multiplier=1, min=4, max=10)
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+    retry=retry_if_not_exception_type(RuntimeError)
 )
 async def search_flights(params: SearchParams) -> list[Flight]:
     async with async_playwright() as playwright:

@@ -1,6 +1,7 @@
 from .constants import (
     RESULTS_SELECTORS,
     ADD_FLIGHT_BUTTON_SELECTOR,
+    ADULT_PER_INFANTS_ON_LAP_ERROR_SELECTOR
 )
 
 from playwright.async_api import Page, ElementHandle, Locator
@@ -46,3 +47,9 @@ async def ensure_popover_is_closed(page: Page) -> None:
         await page.get_by_role("dialog").first.wait_for(state='hidden', timeout=1000)
     except Exception:
         pass
+
+
+async def show_adult_per_infants_on_lap_error(page: Page) -> None:
+    error_message = await page.locator(ADULT_PER_INFANTS_ON_LAP_ERROR_SELECTOR).first.text_content()
+    if error_message:
+        raise RuntimeError(error_message)
