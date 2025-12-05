@@ -5,6 +5,7 @@ from .constants import (
 )
 
 from playwright.async_api import Page, ElementHandle, Locator
+from .errors import AdultPerInfantsOnLapError
 
 
 async def process_flight(page: ElementHandle) -> dict:
@@ -50,6 +51,8 @@ async def ensure_popover_is_closed(page: Page) -> None:
 
 
 async def show_adult_per_infants_on_lap_error(page: Page) -> None:
-    error_message = await page.locator(ADULT_PER_INFANTS_ON_LAP_ERROR_SELECTOR).first.text_content()
+    error_message = await page.locator(
+        ADULT_PER_INFANTS_ON_LAP_ERROR_SELECTOR
+    ).first.text_content()
     if error_message:
-        raise RuntimeError(error_message)
+        raise AdultPerInfantsOnLapError(error_message)

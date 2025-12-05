@@ -9,6 +9,7 @@ from .constants import (
 )
 import asyncio
 from playwright.async_api import Page, async_playwright
+from .errors import AdultPerInfantsOnLapError, NoFlightsFoundError
 
 from tenacity import (
     retry,
@@ -71,7 +72,7 @@ async def extract_flights(page: Page) -> list[dict]:
 
     if not flights:
         logger.error("No flights found")
-        return []
+        raise NoFlightsFoundError(f"Found {len(flights)} flights")
 
     flight_tasks = [
         process_flight(flight) for flight in flights
@@ -85,7 +86,9 @@ async def extract_flights(page: Page) -> list[dict]:
 @retry(
     stop=stop_after_attempt(STOP_AFTER_ATTEMPTS), 
     wait=wait_exponential(multiplier=1, min=4, max=10),
-    retry=retry_if_not_exception_type(RuntimeError)
+    retry=retry_if_not_exception_type(
+        (AdultPerInfantsOnLapError, NoFlightsFoundError)
+    )
 )
 async def search_flights(params: SearchParams) -> list[Flight]:
     async with async_playwright() as playwright:
