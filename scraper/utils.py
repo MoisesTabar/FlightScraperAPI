@@ -9,6 +9,8 @@ from .constants.selectors import (
 from playwright.async_api import Page, ElementHandle, Locator
 from .errors import AdultPerInfantsOnLapError, NoFlightsFoundError
 
+from asyncio import create_task, wait, FIRST_COMPLETED
+
 
 async def process_flight(page: ElementHandle) -> dict:
     flight_info = {}
@@ -60,19 +62,30 @@ async def show_adult_per_infants_on_lap_error(page: Page) -> None:
         raise AdultPerInfantsOnLapError(error_message)
 
 
-async def show_no_flights_found_error(page: Page) -> None:
-    # TEMPORAL SOLUTION. TODO: Should not be waiting for 1s for the user to have response
-    # TEMPORAL SOLUTION. TODO: Sometimes the search takes too long and when that happens, it does not show the error 
-    try:
-        error_element = page.locator(NO_FLIGHTS_ERROR_SELECTOR).first
-        await error_element.wait_for(state='visible', timeout=10_000)
+async def _wait_for_no_flights_error(page: Page) -> str:
+    error_element = page.locator(NO_FLIGHTS_ERROR_SELECTOR).first
+    await error_element.wait_for(state='visible', timeout=0)
+    return await error_element.text_content()
 
-        error_message = await error_element.text_content()
+
+async def _wait_for_flights(page: Page) -> None:
+    flights_element = page.locator(FLIGHTS_SELECTOR).first
+    await flights_element.wait_for(state='visible', timeout=0)
+
+
+async def show_no_flights_found_error(page: Page) -> None:
+    error_task = create_task(_wait_for_no_flights_error(page))
+    flights_task = create_task(_wait_for_flights(page))
+    
+    done, pending = await wait(
+        [error_task, flights_task],
+        return_when=FIRST_COMPLETED
+    )
+    
+    for task in pending:
+        task.cancel()
+    
+    if error_task in done:
+        error_message = error_task.result()
         if error_message:
             raise NoFlightsFoundError(error_message)
-    except NoFlightsFoundError:
-        # Re-raise the NoFlightsFoundError to propagate it
-        raise
-    except Exception:
-        # If the error element doesn't exist (timeout), it means flights are present
-        pass
