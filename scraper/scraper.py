@@ -5,7 +5,8 @@ from .constants.selectors import (
     TICKET_TYPE_SELECTOR,
     SEARCH_BUTTON_SELECTOR,
     PASSENGER_BUTTON_SELECTOR,
-    FLIGHTS_SELECTOR
+    FLIGHTS_SELECTOR,
+    MORE_FLIGHTS_BUTTON
 )
 from .constants.settings import STOP_AFTER_ATTEMPTS
 import asyncio
@@ -19,7 +20,12 @@ from tenacity import (
     retry_if_not_exception_type
 )
 
-from .utils import process_flight, process_duplicate_flights, show_no_flights_found_error
+from .utils import (
+    process_flight,
+    process_duplicate_flights,
+    show_no_flights_found_error,
+    click_more_flights_button
+)
 from .forms import (
     fill_multi_city_form,
     fill_one_way_and_round_trip_form,
@@ -70,6 +76,9 @@ async def fill_search_form(page: Page, params: SearchParams) -> None:
 async def extract_flights(page: Page) -> list[dict]:
     await show_no_flights_found_error(page)
     await page.locator(FLIGHTS_SELECTOR).first.wait_for(state='visible', timeout=30000)
+    logger.info("Clicking more flights button")
+    await click_more_flights_button(page)
+
     all_flights = await page.query_selector_all(FLIGHTS_SELECTOR)
 
     flight_tasks = [

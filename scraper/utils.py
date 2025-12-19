@@ -3,7 +3,8 @@ from .constants.selectors import (
     ADD_FLIGHT_BUTTON_SELECTOR,
     ADULT_PER_INFANTS_ON_LAP_ERROR_SELECTOR,
     NO_FLIGHTS_ERROR_SELECTOR,
-    FLIGHTS_SELECTOR
+    FLIGHTS_SELECTOR,
+    MORE_FLIGHTS_BUTTON
 )
 
 from playwright.async_api import Page, ElementHandle, Locator
@@ -90,6 +91,12 @@ async def show_no_flights_found_error(page: Page) -> None:
         error_message = error_task.result()
         if error_message:
             raise NoFlightsFoundError(error_message)
+
+
+async def click_more_flights_button(page: Page) -> None:
+    await page.locator(MORE_FLIGHTS_BUTTON).first.wait_for(state='visible', timeout=2000)
+    await page.locator(MORE_FLIGHTS_BUTTON).first.click()
+    await page.wait_for_timeout(500)
 
 
 def process_duplicate_flights(flights: list[dict]) -> list[dict]:
