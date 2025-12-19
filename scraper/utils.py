@@ -10,6 +10,7 @@ from playwright.async_api import Page, ElementHandle, Locator
 from .errors import AdultPerInfantsOnLapError, NoFlightsFoundError
 
 from asyncio import create_task, wait, FIRST_COMPLETED
+from itertools import groupby
 
 
 async def process_flight(page: ElementHandle) -> dict:
@@ -89,3 +90,21 @@ async def show_no_flights_found_error(page: Page) -> None:
         error_message = error_task.result()
         if error_message:
             raise NoFlightsFoundError(error_message)
+
+
+def process_duplicate_flights(flights: list[dict]) -> list[dict]:
+    def flight_keys(flight: dict) -> tuple: 
+        return tuple(flight.get(key) for key in flight.keys())
+
+    deduplicated_flights = [
+        next(grouped) 
+        for _, grouped in groupby(
+            sorted(
+                flights,
+                key=flight_keys
+            ), 
+            key=flight_keys
+        )
+    ]
+
+    return sorted(deduplicated_flights, key=lambda flight: flight['price'])

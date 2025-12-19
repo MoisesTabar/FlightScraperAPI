@@ -19,7 +19,7 @@ from tenacity import (
     retry_if_not_exception_type
 )
 
-from .utils import process_flight, show_no_flights_found_error
+from .utils import process_flight, process_duplicate_flights, show_no_flights_found_error
 from .forms import (
     fill_multi_city_form,
     fill_one_way_and_round_trip_form,
@@ -70,15 +70,19 @@ async def fill_search_form(page: Page, params: SearchParams) -> None:
 async def extract_flights(page: Page) -> list[dict]:
     await show_no_flights_found_error(page)
     await page.locator(FLIGHTS_SELECTOR).first.wait_for(state='visible', timeout=30000)
-    flights = await page.query_selector_all(FLIGHTS_SELECTOR)
+    all_flights = await page.query_selector_all(FLIGHTS_SELECTOR)
 
     flight_tasks = [
-        process_flight(flight) for flight in flights
+        process_flight(flight) for flight in all_flights
     ]
 
-    logger.info(f"Extracted {len(flights)} flights")
+    results = await asyncio.gather(*flight_tasks)
 
-    return await asyncio.gather(*flight_tasks)
+    flights = process_duplicate_flights(results)
+
+    logger.info(f"Extracted {len(flights)} unique flights (from {len(results)} total)")
+    
+    return flights
 
 
 @retry(

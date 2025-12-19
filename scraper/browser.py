@@ -16,7 +16,7 @@ async def create_browser_instance(playwright: Playwright) -> BrowserContext:
     )
     
     browser = await playwright.chromium.launch(
-        headless=False,
+        headless=True,
         args=BROWSER_ARGS,
         executable_path=brave_path,
         ignore_default_args=['--disable-http-compression'],
