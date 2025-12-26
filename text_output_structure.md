@@ -20,7 +20,7 @@ When a user sends text to the text endpoint, the AI will:
     "return_date": "Return date in YYYY-MM-DD format (if mentioned)",
     "ticket_type": "One Way, Round Trip, or Multi-City",
     "flight_type": "Economy, Premium Economy, Business, or First",
-    "city_amount": "Number of cities in the trip (Multi-City only) spawns one when there are more than 2 cities",
+    "city_amount": "Number of cities in the trip (Multi-City only) spawns one when there are more than 2 cities, otherwise 0",
     "passengers": {
       "Adult": 1,
       "Children": 0,

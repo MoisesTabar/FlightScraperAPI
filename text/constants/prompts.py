@@ -44,7 +44,7 @@ Output JSON structure:
     "return_date": "YYYY-MM-DD" or null,
     "ticket_type": "One Way" | "Round Trip" | "Multi-City",
     "flight_type": "Economy" | "Premium Economy" | "Business" | "First",
-    "city_amount": number (only for multi-city),
+    "city_amount": number (only for multi-city) spawns one when there are more than 2 cities, otherwise 0,
     "passengers": {
       "Adult": number,
       "Children": number,
